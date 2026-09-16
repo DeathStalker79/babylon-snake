@@ -1,0 +1,16 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
+    container_name: babylon-snake
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+    init: true
+    stdin_open: true
+    tty: true
