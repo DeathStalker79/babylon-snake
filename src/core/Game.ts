@@ -1,30 +1,27 @@
 import {
     ArcRotateCamera,
-    // BallAndSocketConstraint,
     Engine,
     HavokPlugin,
     HemisphericLight,
     MeshBuilder,
-    Physics6DoFConstraint,
     PhysicsAggregate,
-    PhysicsConstraintAxis,
     PhysicsShapeType,
     Scene,
     Vector3,
 } from "@babylonjs/core";
 
-import HavokPhysics from "@babylonjs/havok";
+import { CollisionGroup } from "../physics/CollisionGroup";
+import { Snake } from "../snake/Snake";
 
-import { SnakeSegment } from "../snake/SnakeSegment";
+import HavokPhysics from "@babylonjs/havok";
 
 export class Game {
     private readonly engine: Engine;
     private readonly scene: Scene;
+    private readonly canvas: HTMLCanvasElement;
 
-    private readonly snakeSegments: SnakeSegment[] = [];
-    constructor(
-        private readonly canvas: HTMLCanvasElement
-    ) {
+    constructor(canvas: HTMLCanvasElement) {
+        this.canvas = canvas;
         this.engine = new Engine(this.canvas, true);
         this.scene = new Scene(this.engine);
 
@@ -38,8 +35,7 @@ export class Game {
         await this.enablePhysics();
 
         this.createGround();
-        this.createSnake();
-        this.connectSnake();
+        new Snake(this.scene);
     }
 
     public start() {
@@ -106,103 +102,8 @@ export class Game {
             this.scene
         );
 
-        groundPhysics.shape.filterMembershipMask = 1;
-        groundPhysics.shape.filterCollideMask = 2;
-    }
-
-    private createSnake() {
-        const startY = 4;
-
-        const positions = [
-            new Vector3(-3, startY, 0),
-            new Vector3(-1, startY, 0),
-            new Vector3(1, startY, 0),
-            new Vector3(3, startY, 0),
-        ];
-
-        for (let i = 0; i < positions.length; i++) {
-            const segment = new SnakeSegment(
-                `segment-${i + 1}`,
-                positions[i],
-                this.scene
-            );
-
-            this.snakeSegments.push(segment);
-        }
-    }
-
-    private connectSegments(
-        first: SnakeSegment,
-        second: SnakeSegment
-    ): void {
-        // оставил для теста вариант с BallAndSocketConstraint
-
-        // const constraint = new BallAndSocketConstraint(
-        //     new Vector3(1, 0, 0),
-        //     new Vector3(-1, 0, 0),
-        //     new Vector3(0, 1, 0),
-        //     new Vector3(0, 1, 0),
-        //     this.scene
-        // );
-        const constraint = new Physics6DoFConstraint({
-                pivotA: new Vector3(1, 0, 0),
-                pivotB: new Vector3(-1, 0, 0),
-
-                axisA: new Vector3(1, 0, 0),
-                axisB: new Vector3(1, 0, 0),
-
-                perpAxisA: new Vector3(0, 1, 0),
-                perpAxisB: new Vector3(0, 1, 0),
-            },
-            [
-                {
-                    axis: PhysicsConstraintAxis.LINEAR_X,
-                    minLimit: 0,
-                    maxLimit: 0,
-                },
-                {
-                    axis: PhysicsConstraintAxis.LINEAR_Y,
-                    minLimit: 0,
-                    maxLimit: 0,
-                },
-                {
-                    axis: PhysicsConstraintAxis.LINEAR_Z,
-                    minLimit: 0,
-                    maxLimit: 0,
-                },
-
-                {
-                    axis: PhysicsConstraintAxis.ANGULAR_X,
-                    minLimit: 0,
-                    maxLimit: 0,
-                },
-                {
-                    axis: PhysicsConstraintAxis.ANGULAR_Y,
-                    minLimit: -0.2,
-                    maxLimit: 0.2,
-                },
-                {
-                    axis: PhysicsConstraintAxis.ANGULAR_Z,
-                    minLimit: -0.2,
-                    maxLimit: 0.2,
-                },
-            ],
-            this.scene
-        );
-
-        first.physics.body.addConstraint(
-            second.physics.body,
-            constraint
-        );
-    }
-
-    private connectSnake(): void {
-        for (let i = 0; i < this.snakeSegments.length - 1; i++) {
-            this.connectSegments(
-                this.snakeSegments[i],
-                this.snakeSegments[i + 1]
-            );
-        }
+        groundPhysics.shape.filterMembershipMask = CollisionGroup.Ground;
+        groundPhysics.shape.filterCollideMask = CollisionGroup.Snake;
     }
 
     private readonly handleResize = (): void => {
