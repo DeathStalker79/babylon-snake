@@ -1,7 +1,5 @@
 import {
-    AbstractMesh,
     Color3,
-    StandardMaterial,
 } from "@babylonjs/core";
 
 import {
@@ -12,17 +10,17 @@ import {
     StackPanel,
     TextBlock,
 } from "@babylonjs/gui";
+import type {SnakeSegment} from "../snake/SnakeSegment.ts";
 
 export class GameUI {
     private readonly selectedText: TextBlock;
-    private selectedMesh: AbstractMesh | null = null;
     private readonly finishModal: Rectangle;
+    private selectedSegment: SnakeSegment | null = null;
 
     constructor() {
         const ui = AdvancedDynamicTexture.CreateFullscreenUI(
             "game-ui"
         );
-
         this.finishModal = new Rectangle();
 
         this.finishModal.width = "320px";
@@ -122,8 +120,13 @@ export class GameUI {
         redButton.height = "40px";
 
         redButton.onPointerClickObservable.add(() => {
-            this.changeSelectedColor(
-                new Color3(1, 0, 0)
+            if (!this.selectedSegment) {
+                return;
+            }
+
+            this.selectedSegment.setShaderColors(
+                new Color3(1, 0, 0),
+                new Color3(1, 1, 0)
             );
         });
 
@@ -137,40 +140,26 @@ export class GameUI {
         blueButton.height = "40px";
 
         blueButton.onPointerClickObservable.add(() => {
-            this.changeSelectedColor(
-                new Color3(0, 0, 1)
+            if (!this.selectedSegment) {
+                return;
+            }
+
+            this.selectedSegment.setShaderColors(
+                new Color3(0, 0, 1),
+                new Color3(0, 1, 1)
             );
         });
 
         panel.addControl(blueButton);
     }
 
-    public selectMesh(
-        mesh: AbstractMesh
+    public selectSegment(
+        segment: SnakeSegment
     ): void {
-        this.selectedMesh = mesh;
+        this.selectedSegment = segment;
 
         this.selectedText.text =
-            `Selected: ${mesh.metadata?.id ?? "unknown"}`;
-    }
-
-    private changeSelectedColor(
-        color: Color3
-    ): void {
-        if (!this.selectedMesh) {
-            return;
-        }
-
-        const material =
-            this.selectedMesh.material;
-
-        if (
-            material instanceof StandardMaterial
-        ) {
-            material.diffuseColor.copyFrom(
-                color
-            );
-        }
+            `Selected: ${segment.mesh.metadata?.id ?? "unknown"}`;
     }
 
     public showFinishMessage() {

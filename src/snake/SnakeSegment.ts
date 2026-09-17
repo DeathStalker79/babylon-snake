@@ -6,20 +6,20 @@ import {
     PhysicsMotionType,
     PointerDragBehavior,
     Scene,
-    StandardMaterial,
     Color3,
     Vector3,
     type PhysicsBody,
     ActionManager,
-    ExecuteCodeAction,
+    ExecuteCodeAction, StandardMaterial,
 } from "@babylonjs/core";
 
 import { CollisionGroup } from "../physics/CollisionGroup";
 import { SnakeConfig } from "./SnakeConfig";
 import type {FragmentPool} from "../destruction/FragmentPool.ts";
 import type {DustPool} from "../effects/DustPool.ts";
+import {AnimatedShaderMaterial} from "../materials/AnimatedShaderMaterial.ts";
 type DestroyCallback = (segment: SnakeSegment) => void;
-type SelectCallback = (mesh: Mesh) => void;
+type SelectCallback = (segment: SnakeSegment) => void;
 
 export class SnakeSegment {
     private static readonly ZERO_VELOCITY = Vector3.Zero();
@@ -33,6 +33,7 @@ export class SnakeSegment {
     private readonly dragBehavior: PointerDragBehavior;
     private readonly dustPool: DustPool;
     private readonly onSelected: SelectCallback;
+    private readonly animatedMaterial: AnimatedShaderMaterial;
 
     public get destroyed(): boolean {
         return this.isDestroyed;
@@ -81,6 +82,12 @@ export class SnakeSegment {
         );
         this.mesh.material = material;
 
+        this.animatedMaterial =
+            new AnimatedShaderMaterial(
+                scene,
+                `${id}-shader`
+            );
+
         this.physics = new PhysicsAggregate(
             this.mesh,
             PhysicsShapeType.BOX,
@@ -111,7 +118,7 @@ export class SnakeSegment {
                         return;
                     }
 
-                    this.onSelected(this.mesh);
+                    this.onSelected(this);
                 }
             )
         );
@@ -215,5 +222,18 @@ export class SnakeSegment {
 
     public destroyByObstacle() {
         this.destroy();
+    }
+
+    public setShaderColors(
+        color1: Color3,
+        color2: Color3
+    ): void {
+        this.animatedMaterial.setColors(
+            color1,
+            color2
+        );
+
+        this.mesh.material =
+            this.animatedMaterial.shaderMaterial;
     }
 }

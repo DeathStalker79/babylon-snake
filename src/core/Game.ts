@@ -60,8 +60,8 @@ export class Game {
             this.groundPhysics.body,
             fragmentPool,
             dustPool,
-            (mesh) => {
-                gameUI.selectMesh(mesh);
+            (segment) => {
+                gameUI.selectSegment(segment);
             }
         );
 
