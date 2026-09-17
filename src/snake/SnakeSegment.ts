@@ -9,21 +9,35 @@ import {
     StandardMaterial,
     Color3,
     Vector3,
+    type PhysicsBody,
 } from "@babylonjs/core";
 
 import { CollisionGroup } from "../physics/CollisionGroup";
 import { SnakeConfig } from "./SnakeConfig";
+import type {FragmentPool} from "../destruction/FragmentPool.ts";
 
+type DestroyCallback = (segment: SnakeSegment) => void;
 export class SnakeSegment {
     private static readonly ZERO_VELOCITY = Vector3.Zero();
     public readonly mesh: Mesh;
     public readonly physics: PhysicsAggregate;
+    private readonly groundBody: PhysicsBody;
+    private readonly destructionThreshold = 3.0;
+    private isDestroyed = false;
+    private readonly fragmentPool: FragmentPool;
+    private readonly onDestroyed: DestroyCallback;
 
     constructor(
         id: string,
         position: Vector3,
-        scene: Scene
+        scene: Scene,
+        groundBody: PhysicsBody,
+        fragmentPool: FragmentPool,
+        onDestroyed: DestroyCallback
     ) {
+        this.groundBody = groundBody;
+        this.fragmentPool = fragmentPool;
+        this.onDestroyed = onDestroyed;
         this.mesh = MeshBuilder.CreateBox(
             id,
             {
@@ -66,6 +80,8 @@ export class SnakeSegment {
         this.physics.shape.filterCollideMask = CollisionGroup.Ground;
 
         this.enableDragging();
+
+        this.enableCollisionEvents();
     }
 
     private enableDragging(){
@@ -104,5 +120,54 @@ export class SnakeSegment {
     private resetVelocity() {
         this.physics.body.setLinearVelocity(SnakeSegment.ZERO_VELOCITY);
         this.physics.body.setAngularVelocity(SnakeSegment.ZERO_VELOCITY);
+    }
+
+    private enableCollisionEvents(): void {
+        this.physics.body.setCollisionCallbackEnabled(true);
+
+        this.physics.body
+            .getCollisionObservable()
+            .add((event) => {
+                if (
+                    event.type !== "COLLISION_STARTED" ||
+                    event.collidedAgainst !== this.groundBody ||
+                    this.isDestroyed
+                ) {
+                    return;
+                }
+
+                // console.log(
+                //     this.mesh.metadata.id,
+                //     event.impulse
+                // );
+                if (this.shouldDestroy(event.impulse)) {
+                    this.destroy();
+                }
+            });
+    }
+
+    private shouldDestroy(impulse: number): boolean {
+        return impulse >= this.destructionThreshold;
+    }
+
+    private destroy(): void {
+        if (this.isDestroyed) {
+            return;
+        }
+
+        // console.log(
+        //     "destroy position:",
+        //     this.mesh.getAbsolutePosition().toString()
+        // );
+
+        this.isDestroyed = true;
+
+        const position = this.mesh.getAbsolutePosition().clone();
+
+        this.fragmentPool.acquire(position);
+
+        this.mesh.setEnabled(false);
+
+        this.onDestroyed(this);
     }
 }

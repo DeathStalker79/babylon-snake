@@ -14,11 +14,14 @@ import { CollisionGroup } from "../physics/CollisionGroup";
 import { Snake } from "../snake/Snake";
 
 import HavokPhysics from "@babylonjs/havok";
+import {FragmentPool} from "../destruction/FragmentPool.ts";
+import {SnakeConfig} from "../snake/SnakeConfig.ts";
 
 export class Game {
     private readonly engine: Engine;
     private readonly scene: Scene;
     private readonly canvas: HTMLCanvasElement;
+    private groundPhysics!: PhysicsAggregate;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -35,7 +38,15 @@ export class Game {
         await this.enablePhysics();
 
         this.createGround();
-        new Snake(this.scene);
+        const fragmentPool = new FragmentPool(
+            this.scene,
+            SnakeConfig.segmentCount
+        );
+        new Snake(
+            this.scene,
+            this.groundPhysics.body,
+            fragmentPool
+        );
     }
 
     public start() {
@@ -91,19 +102,25 @@ export class Game {
             this.scene
         );
 
-        const groundPhysics = new PhysicsAggregate(
+        ground.metadata = {
+            type: "ground",
+        };
+
+        this.groundPhysics = new PhysicsAggregate(
             ground,
             PhysicsShapeType.BOX,
             {
                 mass: 0,
-                restitution: 0.2,
+                restitution: 0.1,
                 friction: 0.9,
             },
             this.scene
         );
 
-        groundPhysics.shape.filterMembershipMask = CollisionGroup.Ground;
-        groundPhysics.shape.filterCollideMask = CollisionGroup.Snake;
+        this.groundPhysics.shape.filterMembershipMask = CollisionGroup.Ground;
+        this.groundPhysics.shape.filterCollideMask =
+            CollisionGroup.Snake |
+            CollisionGroup.Fragment;
     }
 
     private readonly handleResize = (): void => {

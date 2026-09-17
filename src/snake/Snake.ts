@@ -1,20 +1,36 @@
 import {
     Physics6DoFConstraint,
     PhysicsConstraintAxis,
+    type PhysicsBody,
     type Scene,
     Vector3
 } from "@babylonjs/core";
 
 import { SnakeConfig } from "./SnakeConfig";
 import {SnakeSegment} from "./SnakeSegment.ts";
+import type {FragmentPool} from "../destruction/FragmentPool.ts";
 
-
+interface SegmentConstraint {
+    first: SnakeSegment;
+    second: SnakeSegment;
+    constraint: Physics6DoFConstraint;
+}
 export class Snake {
     private readonly scene: Scene;
     private readonly snakeSegments: SnakeSegment[] = [];
+    private readonly groundBody: PhysicsBody;
+    private readonly fragmentPool: FragmentPool;
+    // private readonly constraints: Physics6DoFConstraint[] = [];
+    private readonly constraints: SegmentConstraint[] = [];
 
-    constructor(scene: Scene) {
+    constructor(
+        scene: Scene,
+        groundBody: PhysicsBody,
+        fragmentPool: FragmentPool
+    ) {
         this.scene = scene;
+        this.groundBody = groundBody;
+        this.fragmentPool = fragmentPool;
         this.createSnake();
         this.connectSegments();
     }
@@ -32,7 +48,10 @@ export class Snake {
             const segment = new SnakeSegment(
                 `segment-${index + 1}`,
                 position,
-                this.scene
+                this.scene,
+                this.groundBody,
+                this.fragmentPool,
+                this.handleSegmentDestroyed
             );
 
             this.snakeSegments.push(segment);
@@ -49,6 +68,12 @@ export class Snake {
                 second.physics.body,
                 constraint
             );
+
+            this.constraints.push({
+                first,
+                second,
+                constraint,
+            });
         }
     }
 
@@ -92,4 +117,19 @@ export class Snake {
             maxLimit: 0,
         };
     }
+
+    private readonly handleSegmentDestroyed = (
+        segment: SnakeSegment
+    ): void => {
+        for (const connection of this.constraints) {
+            if (
+                connection.first === segment ||
+                connection.second === segment
+            ) {
+                connection.constraint.isEnabled = false;
+            }
+        }
+
+        segment.physics.dispose();
+    };
 }
