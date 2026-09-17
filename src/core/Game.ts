@@ -19,6 +19,7 @@ import {SnakeConfig} from "../snake/SnakeConfig.ts";
 import {FinishZone} from "../finish/FinishZone.ts";
 import {RayObstacle} from "../obstacles/RayObstacle.ts";
 import {RayObstacles} from "../obstacles/RayObstacles.ts";
+import {DustPool} from "../effects/DustPool.ts";
 
 export class Game {
     private readonly engine: Engine;
@@ -45,10 +46,17 @@ export class Game {
             this.scene,
             SnakeConfig.segmentCount
         );
+
+        const dustPool = new DustPool(
+            this.scene,
+            8
+        );
+
         const snake = new Snake(
             this.scene,
             this.groundPhysics.body,
-            fragmentPool
+            fragmentPool,
+            dustPool,
         );
 
         new FinishZone(
@@ -78,7 +86,7 @@ export class Game {
             "camera",
             Math.PI / 2,
             Math.PI / 3,
-            10,
+            30,
             Vector3.Zero(),
             this.scene
         );

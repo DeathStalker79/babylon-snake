@@ -69,11 +69,6 @@ export class RayObstacle {
             return;
         }
 
-        console.log(
-            "Ray hit:",
-            result.pickedMesh.name
-        );
-
         segment.destroyByObstacle();
     }
 }

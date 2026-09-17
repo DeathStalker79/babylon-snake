@@ -9,6 +9,7 @@ import {
 import { SnakeConfig } from "./SnakeConfig";
 import {SnakeSegment} from "./SnakeSegment.ts";
 import type {FragmentPool} from "../destruction/FragmentPool.ts";
+import type {DustPool} from "../effects/DustPool.ts";
 
 interface SegmentConstraint {
     first: SnakeSegment;
@@ -21,15 +22,18 @@ export class Snake {
     private readonly groundBody: PhysicsBody;
     private readonly fragmentPool: FragmentPool;
     private readonly constraints: SegmentConstraint[] = [];
+    private readonly dustPool: DustPool;
 
     constructor(
         scene: Scene,
         groundBody: PhysicsBody,
-        fragmentPool: FragmentPool
+        fragmentPool: FragmentPool,
+        dustPool: DustPool,
     ) {
         this.scene = scene;
         this.groundBody = groundBody;
         this.fragmentPool = fragmentPool;
+        this.dustPool = dustPool;
         this.createSnake();
         this.connectSegments();
     }
@@ -55,7 +59,8 @@ export class Snake {
                 this.scene,
                 this.groundBody,
                 this.fragmentPool,
-                this.handleSegmentDestroyed
+                this.handleSegmentDestroyed,
+                this.dustPool,
             );
 
             this.snakeSegments.push(segment);

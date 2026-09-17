@@ -63,6 +63,7 @@ export class FinishZone {
 
         for (const segment of this.segments) {
             if (
+                !segment.destroyed &&
                 this.mesh.intersectsMesh(
                     segment.mesh
                 )

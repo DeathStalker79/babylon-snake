@@ -64,11 +64,6 @@ export class FragmentGroup {
     }
 
     public activate(position: Vector3): void {
-        // console.log(
-        //     "fragment activate center:",
-        //     position.toString()
-        // );
-
         for (let i = 0; i < this.fragments.length; i++) {
             const fragment = this.fragments[i];
             const physics = this.physics[i];

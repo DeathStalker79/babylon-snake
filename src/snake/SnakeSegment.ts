@@ -15,6 +15,7 @@ import {
 import { CollisionGroup } from "../physics/CollisionGroup";
 import { SnakeConfig } from "./SnakeConfig";
 import type {FragmentPool} from "../destruction/FragmentPool.ts";
+import type {DustPool} from "../effects/DustPool.ts";
 
 type DestroyCallback = (segment: SnakeSegment) => void;
 export class SnakeSegment {
@@ -27,6 +28,7 @@ export class SnakeSegment {
     private readonly fragmentPool: FragmentPool;
     private readonly onDestroyed: DestroyCallback;
     private readonly dragBehavior: PointerDragBehavior;
+    private readonly dustPool: DustPool;
 
     public get destroyed(): boolean {
         return this.isDestroyed;
@@ -38,10 +40,12 @@ export class SnakeSegment {
         scene: Scene,
         groundBody: PhysicsBody,
         fragmentPool: FragmentPool,
-        onDestroyed: DestroyCallback
+        onDestroyed: DestroyCallback,
+        dustPool: DustPool
     ) {
         this.groundBody = groundBody;
         this.fragmentPool = fragmentPool;
+        this.dustPool = dustPool;
         this.onDestroyed = onDestroyed;
         this.mesh = MeshBuilder.CreateBox(
             id,
@@ -141,10 +145,15 @@ export class SnakeSegment {
                     return;
                 }
 
-                // console.log(
-                //     this.mesh.metadata.id,
-                //     event.impulse
-                // );
+                const contactPoint = event.point;
+
+                if (contactPoint) {
+                    this.dustPool.emit(
+                        contactPoint.clone(),
+                        15
+                    );
+                }
+
                 if (this.shouldDestroy(event.impulse)) {
                     this.destroy();
                 }
@@ -159,12 +168,6 @@ export class SnakeSegment {
         if (this.isDestroyed) {
             return;
         }
-
-        // console.log(
-        //     "destroy position:",
-        //     this.mesh.getAbsolutePosition().toString()
-        // );
-
         this.isDestroyed = true;
 
         this.dragBehavior.onDragStartObservable.clear();
@@ -176,6 +179,11 @@ export class SnakeSegment {
         const position = this.mesh.getAbsolutePosition().clone();
 
         this.fragmentPool.acquire(position);
+
+        this.dustPool.emit(
+            position.clone(),
+            50
+        );
 
         this.mesh.setEnabled(false);
 
