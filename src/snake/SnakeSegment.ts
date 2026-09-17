@@ -84,19 +84,18 @@ export class SnakeSegment {
         this.physics.shape.filterMembershipMask = CollisionGroup.Snake;
         this.physics.shape.filterCollideMask = CollisionGroup.Ground;
 
-        this.enableDragging();
+        this.dragBehavior = this.createDragBehavior();
+        this.mesh.addBehavior(this.dragBehavior);
 
         this.enableCollisionEvents();
     }
 
-    private enableDragging(){
+    private createDragBehavior(): PointerDragBehavior {
         const dragBehavior = new PointerDragBehavior({
             dragPlaneNormal: new Vector3(0, 1, 0),
         });
 
-        this.mesh.addBehavior(dragBehavior);
-
-        const dragHeight = 0.6;
+        dragBehavior.dragDeltaRatio = SnakeConfig.dragDeltaRatio;
 
         dragBehavior.onDragStartObservable.add(() => {
             this.physics.body.setMotionType(
@@ -107,8 +106,8 @@ export class SnakeSegment {
             this.resetVelocity();
         });
 
-        dragBehavior.onDragObservable.add((): void => {
-            this.mesh.position.y = dragHeight;
+        dragBehavior.onDragObservable.add(() => {
+            this.mesh.position.y = SnakeConfig.dragHeight;
             this.resetVelocity();
         });
 
@@ -120,6 +119,8 @@ export class SnakeSegment {
                 PhysicsMotionType.DYNAMIC
             );
         });
+
+        return dragBehavior;
     }
 
     private resetVelocity() {
@@ -135,8 +136,7 @@ export class SnakeSegment {
             .add((event) => {
                 if (
                     event.type !== "COLLISION_STARTED" ||
-                    event.collidedAgainst !== this.groundBody ||
-                    this.isDestroyed
+                    event.collidedAgainst !== this.groundBody
                 ) {
                     return;
                 }
@@ -166,6 +166,12 @@ export class SnakeSegment {
         // );
 
         this.isDestroyed = true;
+
+        this.dragBehavior.onDragStartObservable.clear();
+        this.dragBehavior.onDragObservable.clear();
+        this.dragBehavior.onDragEndObservable.clear();
+        this.dragBehavior.enabled = false;
+        this.physics.body.setCollisionCallbackEnabled(false);
 
         const position = this.mesh.getAbsolutePosition().clone();
 
