@@ -8,17 +8,21 @@ import {
 } from "@babylonjs/core";
 
 import type { SnakeSegment } from "../snake/SnakeSegment";
+type FinishCallback = () => void;
 
 export class FinishZone {
     private readonly mesh: Mesh;
     private readonly segments: readonly SnakeSegment[];
     private isFinished = false;
+    private readonly onFinish: FinishCallback;
 
     constructor(
         scene: Scene,
-        segments: readonly SnakeSegment[]
+        segments: readonly SnakeSegment[],
+        onFinish: FinishCallback
     ) {
         this.segments = segments;
+        this.onFinish = onFinish;
 
         this.mesh = MeshBuilder.CreateBox(
             "finish-zone",
@@ -69,8 +73,7 @@ export class FinishZone {
                 )
             ) {
                 this.isFinished = true;
-
-                alert("Finish!");
+                this.onFinish();
 
                 return;
             }

@@ -3,7 +3,8 @@ import {
     PhysicsConstraintAxis,
     type PhysicsBody,
     type Scene,
-    Vector3
+    Vector3,
+    type Mesh
 } from "@babylonjs/core";
 
 import { SnakeConfig } from "./SnakeConfig";
@@ -23,17 +24,20 @@ export class Snake {
     private readonly fragmentPool: FragmentPool;
     private readonly constraints: SegmentConstraint[] = [];
     private readonly dustPool: DustPool;
+    private readonly onSelected: (mesh: Mesh) => void;
 
     constructor(
         scene: Scene,
         groundBody: PhysicsBody,
         fragmentPool: FragmentPool,
         dustPool: DustPool,
+        onSelected: (mesh: Mesh) => void
     ) {
         this.scene = scene;
         this.groundBody = groundBody;
         this.fragmentPool = fragmentPool;
         this.dustPool = dustPool;
+        this.onSelected = onSelected;
         this.createSnake();
         this.connectSegments();
     }
@@ -61,6 +65,7 @@ export class Snake {
                 this.fragmentPool,
                 this.handleSegmentDestroyed,
                 this.dustPool,
+                this.onSelected
             );
 
             this.snakeSegments.push(segment);

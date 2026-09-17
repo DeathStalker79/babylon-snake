@@ -10,14 +10,17 @@ import {
     Color3,
     Vector3,
     type PhysicsBody,
+    ActionManager,
+    ExecuteCodeAction,
 } from "@babylonjs/core";
 
 import { CollisionGroup } from "../physics/CollisionGroup";
 import { SnakeConfig } from "./SnakeConfig";
 import type {FragmentPool} from "../destruction/FragmentPool.ts";
 import type {DustPool} from "../effects/DustPool.ts";
-
 type DestroyCallback = (segment: SnakeSegment) => void;
+type SelectCallback = (mesh: Mesh) => void;
+
 export class SnakeSegment {
     private static readonly ZERO_VELOCITY = Vector3.Zero();
     public readonly mesh: Mesh;
@@ -29,6 +32,7 @@ export class SnakeSegment {
     private readonly onDestroyed: DestroyCallback;
     private readonly dragBehavior: PointerDragBehavior;
     private readonly dustPool: DustPool;
+    private readonly onSelected: SelectCallback;
 
     public get destroyed(): boolean {
         return this.isDestroyed;
@@ -41,12 +45,15 @@ export class SnakeSegment {
         groundBody: PhysicsBody,
         fragmentPool: FragmentPool,
         onDestroyed: DestroyCallback,
-        dustPool: DustPool
+        dustPool: DustPool,
+        onSelected: SelectCallback
     ) {
         this.groundBody = groundBody;
         this.fragmentPool = fragmentPool;
         this.dustPool = dustPool;
         this.onDestroyed = onDestroyed;
+        this.onSelected = onSelected;
+
         this.mesh = MeshBuilder.CreateBox(
             id,
             {
@@ -92,6 +99,22 @@ export class SnakeSegment {
         this.mesh.addBehavior(this.dragBehavior);
 
         this.enableCollisionEvents();
+
+        this.mesh.actionManager =
+            new ActionManager(scene);
+
+        this.mesh.actionManager.registerAction(
+            new ExecuteCodeAction(
+                ActionManager.OnPickTrigger,
+                () => {
+                    if (this.isDestroyed) {
+                        return;
+                    }
+
+                    this.onSelected(this.mesh);
+                }
+            )
+        );
     }
 
     private createDragBehavior(): PointerDragBehavior {

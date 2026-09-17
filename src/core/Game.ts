@@ -20,6 +20,7 @@ import {FinishZone} from "../finish/FinishZone.ts";
 import {RayObstacle} from "../obstacles/RayObstacle.ts";
 import {RayObstacles} from "../obstacles/RayObstacles.ts";
 import {DustPool} from "../effects/DustPool.ts";
+import {GameUI} from "../ui/GameUI.ts";
 
 export class Game {
     private readonly engine: Engine;
@@ -41,6 +42,8 @@ export class Game {
 
         await this.enablePhysics();
 
+        const gameUI = new GameUI();
+
         this.createGround();
         const fragmentPool = new FragmentPool(
             this.scene,
@@ -57,11 +60,17 @@ export class Game {
             this.groundPhysics.body,
             fragmentPool,
             dustPool,
+            (mesh) => {
+                gameUI.selectMesh(mesh);
+            }
         );
 
         new FinishZone(
             this.scene,
-            snake.segments
+            snake.segments,
+            () => {
+                gameUI.showFinishMessage();
+            }
         );
 
         for (const obstacle of RayObstacles) {
