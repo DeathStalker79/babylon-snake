@@ -22,10 +22,15 @@ export class SnakeSegment {
     public readonly mesh: Mesh;
     public readonly physics: PhysicsAggregate;
     private readonly groundBody: PhysicsBody;
-    private readonly destructionThreshold = 3.0;
+    private readonly destructionThreshold = SnakeConfig.destructionThreshold;
     private isDestroyed = false;
     private readonly fragmentPool: FragmentPool;
     private readonly onDestroyed: DestroyCallback;
+    private readonly dragBehavior: PointerDragBehavior;
+
+    public get destroyed(): boolean {
+        return this.isDestroyed;
+    }
 
     constructor(
         id: string,
@@ -169,5 +174,9 @@ export class SnakeSegment {
         this.mesh.setEnabled(false);
 
         this.onDestroyed(this);
+    }
+
+    public destroyByObstacle() {
+        this.destroy();
     }
 }

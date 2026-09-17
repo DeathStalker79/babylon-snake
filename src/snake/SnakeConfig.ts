@@ -6,4 +6,5 @@ export const SnakeConfig = {
     startHeight: 4,
     dragHeight: 0.6,
     angularLimit: 0.3,
+    destructionThreshold: 5.0,
 } as const;

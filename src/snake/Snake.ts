@@ -20,7 +20,6 @@ export class Snake {
     private readonly snakeSegments: SnakeSegment[] = [];
     private readonly groundBody: PhysicsBody;
     private readonly fragmentPool: FragmentPool;
-    // private readonly constraints: Physics6DoFConstraint[] = [];
     private readonly constraints: SegmentConstraint[] = [];
 
     constructor(
@@ -34,6 +33,11 @@ export class Snake {
         this.createSnake();
         this.connectSegments();
     }
+
+    public get segments(): readonly SnakeSegment[] {
+        return this.snakeSegments;
+    }
+
     private createSnake() {
         const snakeWidth = (SnakeConfig.segmentCount - 1) * SnakeConfig.segmentWidth;
         const startX = -snakeWidth / 2;
@@ -42,7 +46,7 @@ export class Snake {
             const position = new Vector3(
                 startX + index * SnakeConfig.segmentWidth,
                 SnakeConfig.startHeight,
-                0
+                7
             );
 
             const segment = new SnakeSegment(

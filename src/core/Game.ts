@@ -16,6 +16,9 @@ import { Snake } from "../snake/Snake";
 import HavokPhysics from "@babylonjs/havok";
 import {FragmentPool} from "../destruction/FragmentPool.ts";
 import {SnakeConfig} from "../snake/SnakeConfig.ts";
+import {FinishZone} from "../finish/FinishZone.ts";
+import {RayObstacle} from "../obstacles/RayObstacle.ts";
+import {RayObstacles} from "../obstacles/RayObstacles.ts";
 
 export class Game {
     private readonly engine: Engine;
@@ -42,11 +45,26 @@ export class Game {
             this.scene,
             SnakeConfig.segmentCount
         );
-        new Snake(
+        const snake = new Snake(
             this.scene,
             this.groundPhysics.body,
             fragmentPool
         );
+
+        new FinishZone(
+            this.scene,
+            snake.segments
+        );
+
+        for (const obstacle of RayObstacles) {
+            new RayObstacle(
+                this.scene,
+                snake.segments,
+                obstacle.origin,
+                obstacle.direction,
+                obstacle.length
+            );
+        }
     }
 
     public start() {
